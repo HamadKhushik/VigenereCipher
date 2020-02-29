@@ -43,7 +43,7 @@ public class tester {
         //FileResource fr = new FileResource();
         //String message = fr.asString();
         //System.out.println(vb.sliceString("abcdefghijklm", 0, 4));
-        //int[] key = vb.tryKeyLength(message, 4, 'e');
+        //int[] key = vb.tryKeyLength(message, 38, 'e');
         //System.out.println("The key is " + Arrays.toString(key));
         vb.breakVigenere();
     }

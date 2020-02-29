@@ -1,5 +1,7 @@
 import edu.duke.FileResource;
 
+import java.util.HashSet;
+
 public class VigenereBreaker {
 
     public String sliceString(String message, int whichSlice, int totalSlices) {
@@ -40,10 +42,54 @@ public class VigenereBreaker {
 
         FileResource fr = new FileResource();
         String message = fr.asString();
-        int[] key = tryKeyLength(message, 4, 'e');
-        VigenereCipher vc = new VigenereCipher(key);
-        String decrypted = vc.decrypt(message);
+        FileResource dict = new FileResource();
+        HashSet<String> dictionary = readDictionary(dict);
+        String decrypted = breakForLanguage(message, dictionary);
         System.out.println("The decrypted message is \n" + decrypted);
+    }
+
+    public HashSet<String> readDictionary(FileResource fr) {
+        HashSet<String> dictionary = new HashSet<String>();
+        for (String line : fr.lines()) {
+            dictionary.add(line.toLowerCase());
+        }
+        return dictionary;
+    }
+
+    public int countWords(String message, HashSet<String> dictionary) {
+        String[] words = message.split("\\W");
+        int count = 0;
+        for (String word : words) {
+            if (dictionary.contains(word.toLowerCase())) {
+                count += 1;
+            }
+        }
+        return count;
+    }
+
+    public String breakForLanguage(String encrypted, HashSet dictionary) {
+
+        //This method tries all the keyLengths from 1 to 100 and decrypts the message with every keyLength
+        // returns the decrypted message with most valid words by using countWords()
+
+        int count = 0;
+        int keyLength = 0;
+        String result = "";
+        for (int i = 1; i < 101; i++) {
+            int[] key = tryKeyLength(encrypted, i, 'e');
+            VigenereCipher vc = new VigenereCipher(key);
+            String decrypted = vc.decrypt(encrypted);
+            int currCount = countWords(decrypted, dictionary);
+            if (currCount > count) {
+                count = currCount;
+                result = decrypted;
+                keyLength = i;
+            }
+        }
+        System.out.println("The number of valid words found is " + count);
+        System.out.println("The key Length is " + keyLength);
+
+        return result;
     }
 
 }
