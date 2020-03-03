@@ -1,5 +1,9 @@
+import edu.duke.DirectoryResource;
 import edu.duke.FileResource;
 
+import java.io.File;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 
 public class VigenereBreaker {
@@ -42,10 +46,15 @@ public class VigenereBreaker {
 
         FileResource fr = new FileResource();
         String message = fr.asString();
-        FileResource dict = new FileResource();
-        HashSet<String> dictionary = readDictionary(dict);
-        String decrypted = breakForLanguage(message, dictionary);
-        System.out.println("The decrypted message is \n" + decrypted);
+        HashMap<String, HashSet<String>> dictionaries = new HashMap<String, HashSet<String>>();
+        DirectoryResource dict = new DirectoryResource();
+        for (File f : dict.selectedFiles()) {
+            FileResource frDict = new FileResource(f);
+            HashSet<String> dictionary = readDictionary(frDict);
+            dictionaries.put(f.getName(), dictionary);
+            System.out.println(f.getName());
+        }
+        breakForAllLangs(message, dictionaries);
     }
 
     public HashSet<String> readDictionary(FileResource fr) {
@@ -67,7 +76,7 @@ public class VigenereBreaker {
         return count;
     }
 
-    public String breakForLanguage(String encrypted, HashSet dictionary) {
+    public String breakForLanguage(String encrypted, HashSet<String> dictionary) {
 
         //This method tries all the keyLengths from 1 to 100 and decrypts the message with every keyLength
         // returns the decrypted message with most valid words by using countWords()
@@ -75,8 +84,10 @@ public class VigenereBreaker {
         int count = 0;
         int keyLength = 0;
         String result = "";
+        StringBuilder sb = new StringBuilder();
+        char c = mostCommonCharIn(dictionary);
         for (int i = 1; i < 101; i++) {
-            int[] key = tryKeyLength(encrypted, i, 'e');
+            int[] key = tryKeyLength(encrypted, i, c);
             VigenereCipher vc = new VigenereCipher(key);
             String decrypted = vc.decrypt(encrypted);
             int currCount = countWords(decrypted, dictionary);
@@ -84,12 +95,65 @@ public class VigenereBreaker {
                 count = currCount;
                 result = decrypted;
                 keyLength = i;
+                sb.setLength(0);
+                sb.append(Arrays.toString(key));
             }
         }
         System.out.println("The number of valid words found is " + count);
         System.out.println("The key Length is " + keyLength);
-
+        System.out.println("The key is " + sb);
         return result;
     }
 
+    public char mostCommonCharIn(HashSet<String> dictionary) {
+
+        //which has one parameter—a HashSet of Strings dictionary. This method should find out
+        // which character, of the letters in the English alphabet, appears most often in
+        // the words in dictionary
+
+        HashMap<Character, Integer> alphabetCount = new HashMap<Character, Integer>();
+        for (String word : dictionary) {
+            for (int i = 0; i < word.length(); i++) {
+                char c = word.charAt(i);
+                if (!alphabetCount.containsKey(c)) {
+                    alphabetCount.put(c, 1);
+                } else {
+                    alphabetCount.put(c, alphabetCount.get(c) + 1);
+                }
+            }
+        }
+        char mostCommon = 0;
+        int currCount = 0;
+        for (char c : alphabetCount.keySet()) {
+            if (alphabetCount.get(c) > currCount) {
+                mostCommon = c;
+                currCount = alphabetCount.get(c);
+            }
+        }
+        return mostCommon;
+    }
+
+    public void breakForAllLangs(String encrypted, HashMap<String, HashSet<String>> languages) {
+
+        //has two parameters—a String encrypted, and a HashMap, called languages, mapping a String
+        // representing the name of a language to a HashSet of Strings containing the words in that language.
+        // Tries breaking the encryption for each language, and see which gives the best results!
+
+        String language = "";
+        String result = "";
+        int maxWords = 0;
+        for (String lang : languages.keySet()) {
+            HashSet<String> dictionary = languages.get(lang);
+            System.out.println("\n\n" + lang);
+            String currResult = breakForLanguage(encrypted, dictionary);
+            int currCount = countWords(currResult, dictionary);
+            if (currCount > maxWords) {
+                maxWords = currCount;
+                language = lang;
+                result = currResult;
+            }
+        }
+        System.out.println("The decryption language is " + language);
+        System.out.println("The decrypted String is " + result);
+    }
 }
